@@ -1,0 +1,26 @@
+#do testing on travis 
+sudo : required
+services: 
+  - docker
+
+before_install:
+  # build image for client
+  - docker build -t pv/react-test -f ./client/Dockerfile.dev ./client
+  # do other  build dev  
+script:
+  - docker run pv/react-test npm test -- --coverage
+  # do other tests
+after_success:
+  # build images for production after test success
+  - docker build -t pv/multi-client ./client
+  - docker build -t pv/multi-nginx ./nginx
+  - docker build -t pv/multi-server ./server
+  - docker build -t pv/multi-worker ./worker 
+  # set-up user and pass on travis to login to docker hub
+  - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_ID" --password-stdin
+  #push images to docker hub
+  - docker push pv/multi-client
+  - docker push pv/multi-nginx
+  - docker push pv/multi-server
+  - docker push pv/multi-worker
+  
